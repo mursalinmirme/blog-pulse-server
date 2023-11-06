@@ -1,8 +1,12 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 
+// middleware
+app.use(cors())
+app.use(express.json())
 app.get('/', (req, res) => {
     res.send('The blogpulse server is running....');
 })
@@ -35,12 +39,16 @@ async function run() {
         res.send(getAllBlogs);
     })
 
-
+    app.post('/addnewblog', async(req, res) => {
+      const newBlog = req.body;
+      const addResult = await allBlogsCollection.insertOne(newBlog);
+      res.send(addResult)
+    })
 
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
