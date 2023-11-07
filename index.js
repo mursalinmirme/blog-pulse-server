@@ -33,11 +33,34 @@ async function run() {
 
     // collections
     const allBlogsCollection = client.db('blog-pulse').collection('allblogs');
+    const categoryCollection = client.db('blog-pulse').collection('category');
 
-    app.get('/allblogs', async(req, res) => {
-        const getAllBlogs = await allBlogsCollection.find().toArray();
-        res.send(getAllBlogs);
+    // get methods are
+
+    // get categories 
+    app.get('/categories', async(req, res) => {
+        const getCategory = await categoryCollection.find().toArray();
+        res.send(getCategory);
     })
+
+    // get all blogs
+    app.get('/allblogs', async(req, res) => {
+        const filterBy = req?.query?.display;
+        let filter = {};
+        if(filterBy !== 'All'){
+          filter = {category: filterBy}
+        }
+        console.log(filterBy);
+        const getFilterBlogs = await allBlogsCollection.find(filter).toArray();
+        res.send(getFilterBlogs);
+    })
+    // get recent posted blogs 
+    app.get('/recentBlogs', async(req, res) => {
+      const currentTime = req.query?.time;
+      const getFeaturedBlogs = await allBlogsCollection.find({blogPostTime: {$lt : currentTime}}).sort({blogPostTime: -1}).skip(0).limit(6).toArray();
+      res.send(getFeaturedBlogs);
+    })
+   
 
     app.post('/addnewblog', async(req, res) => {
       const newBlog = req.body;
