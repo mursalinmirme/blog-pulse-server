@@ -35,6 +35,7 @@ async function run() {
     const allBlogsCollection = client.db('blog-pulse').collection('allblogs');
     const categoryCollection = client.db('blog-pulse').collection('category');
     const commentsCollection = client.db('blog-pulse').collection('comments');
+    const wishListCollection = client.db('blog-pulse').collection('wishList');
 
     // get methods are
 
@@ -89,6 +90,13 @@ async function run() {
       const getUpdateBlog = await allBlogsCollection.findOne({_id: new ObjectId(updateBlogId)});
       res.send(getUpdateBlog);
     })
+    // get my wishlist
+    app.get('/wishlist', async(req, res) => {
+      const email = req.query?.email;
+      console.log(email);
+      const myWishList = await wishListCollection.find({owner: email}).toArray();
+      res.send(myWishList);
+    })
 
     // post methods
 
@@ -103,6 +111,13 @@ async function run() {
       const commentResult = await commentsCollection.insertOne(comment);
       res.send(commentResult);
       console.log(comment);
+    })
+    // post a comment
+    app.post('/wishlist', async(req, res) => {
+      const wishlist = req.body;
+      const wishlistResult = await wishListCollection.insertOne(wishlist);
+      res.send(wishlistResult);
+      console.log(wishlist);
     })
 
     
@@ -120,7 +135,13 @@ async function run() {
       console.log('update data is ', updateData);
     })
 
-
+    // delete a wishlist
+    app.delete('/wishlist/:id', async(req, res) => {
+      const deleteId = req.params.id;
+      const deleteResult = await wishListCollection.deleteOne({_id: new ObjectId(deleteId)});
+      res.send(deleteResult);
+      console.log(deleteResult);
+    })
 
 
 
