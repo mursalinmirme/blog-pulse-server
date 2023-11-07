@@ -54,6 +54,13 @@ async function run() {
         const getFilterBlogs = await allBlogsCollection.find(filter).toArray();
         res.send(getFilterBlogs);
     })
+    // search bolgs 
+    app.get('/searchBlog', async(req, res) => {
+        const searchVal = req.query.search;
+        const searchResult = await allBlogsCollection.find({blogTitle: searchVal}).toArray();
+        res.send(searchResult);
+        console.log('search value is',searchVal);
+    })
     // get recent posted blogs 
     app.get('/recentBlogs', async(req, res) => {
       const currentTime = req.query?.time;
