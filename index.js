@@ -97,6 +97,22 @@ async function run() {
       const myWishList = await wishListCollection.find({owner: email}).toArray();
       res.send(myWishList);
     })
+    // get top 10 featured blog
+    app.get('/featured-blogs', async (req, res) => {
+      const getFeaturedBlogs = await allBlogsCollection.aggregate([
+        {
+          $addFields: {
+            fieldLength: { $strLenCP: "$longDescription" }
+          }
+        },
+        {
+          $sort: { fieldLength: -1 }
+        }
+      ]).skip(0).limit(10).toArray();
+      res.send(getFeaturedBlogs);
+    });
+
+
 
     // post methods
 
