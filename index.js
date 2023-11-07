@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
 
 // mongo db
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@mursalin.bxh3q56.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -34,6 +34,7 @@ async function run() {
     // collections
     const allBlogsCollection = client.db('blog-pulse').collection('allblogs');
     const categoryCollection = client.db('blog-pulse').collection('category');
+    const commentsCollection = client.db('blog-pulse').collection('comments');
 
     // get methods are
 
@@ -54,6 +55,13 @@ async function run() {
         const getFilterBlogs = await allBlogsCollection.find(filter).toArray();
         res.send(getFilterBlogs);
     })
+    // get all blogs
+    app.get('/allblogs/:id', async(req, res) => {
+        const currentItem = req?.params?.id;
+        const findQuery = {_id: new ObjectId(currentItem)};
+        const currentBlogResult = await allBlogsCollection.findOne(findQuery);
+        res.send(currentBlogResult);
+    })
     // search bolgs 
     app.get('/searchBlog', async(req, res) => {
         const searchVal = req.query.search;
@@ -67,13 +75,33 @@ async function run() {
       const getFeaturedBlogs = await allBlogsCollection.find({blogPostTime: {$lt : currentTime}}).sort({blogPostTime: -1}).skip(0).limit(6).toArray();
       res.send(getFeaturedBlogs);
     })
-   
+    // get post item comments
+    app.get('/comments', async(req, res) => {
+      const comment = req.query?.blog;
+      const commentResult = await commentsCollection.find({blogId: comment}).toArray();
+      res.send(commentResult);
+      console.log(comment);
+    })
+
+    // post methods
 
     app.post('/addnewblog', async(req, res) => {
       const newBlog = req.body;
       const addResult = await allBlogsCollection.insertOne(newBlog);
       res.send(addResult)
     })
+    // post a comment
+    app.post('/comments', async(req, res) => {
+      const comment = req.body;
+      const commentResult = await commentsCollection.insertOne(comment);
+      res.send(commentResult);
+      console.log(comment);
+    })
+
+
+
+
+
 
 
 
