@@ -82,6 +82,13 @@ async function run() {
       res.send(commentResult);
       console.log(comment);
     })
+    // get update blog 
+    app.get('/update-blog', async(req, res) => {
+      const updateBlogId = req.query.blogid;
+      console.log(updateBlogId);
+      const getUpdateBlog = await allBlogsCollection.findOne({_id: new ObjectId(updateBlogId)});
+      res.send(getUpdateBlog);
+    })
 
     // post methods
 
@@ -96,6 +103,21 @@ async function run() {
       const commentResult = await commentsCollection.insertOne(comment);
       res.send(commentResult);
       console.log(comment);
+    })
+
+    
+    // update a blog
+    app.put('/update-blog/:id', async(req, res) => {
+      const updateData = req.body;
+      const updateId = req.params.id;
+      const filter = {_id: new ObjectId(updateId)};
+      const options = { upsert: true };
+      const updateDoc = {
+          $set : updateData,
+      }
+      const updateResult = await allBlogsCollection.updateOne(filter, updateDoc, options);
+      res.send(updateResult);
+      console.log('update data is ', updateData);
     })
 
 
