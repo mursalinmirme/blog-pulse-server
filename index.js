@@ -1,12 +1,35 @@
 const express = require('express');
 const app = express();
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const cookieParser = require('cookie-parser')
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 
 // middleware
-app.use(cors())
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}))
 app.use(express.json())
+app.use(cookieParser())
+
+const verifyToken = (req, res, next) => {
+  const getToken = req.cookies.token;
+  if(!getToken){
+    return res.status(401).send({msg: 'Unauthorized'});
+  }
+  jwt.verify(getToken, process.env.SECRET_TOKEN, (err, decoded) => {
+    if(err){
+    return res.status(401).send({msg: 'Unauthorized access'});
+    }
+    req.user = decoded;
+    next();
+  })
+}
+
+
+// root ./
 app.get('/', (req, res) => {
     res.send('The blogpulse server is running....');
 })
@@ -36,6 +59,49 @@ async function run() {
     const categoryCollection = client.db('blog-pulse').collection('category');
     const commentsCollection = client.db('blog-pulse').collection('comments');
     const wishListCollection = client.db('blog-pulse').collection('wishList');
+
+    // post methods
+
+    app.post('/addnewblog', async(req, res) => {
+      const newBlog = req.body;
+      const addResult = await allBlogsCollection.insertOne(newBlog);
+      res.send(addResult)
+    })
+    // post a comment
+    app.post('/comments', async(req, res) => {
+      const comment = req.body;
+      const commentResult = await commentsCollection.insertOne(comment);
+      res.send(commentResult);
+      console.log(comment);
+    })
+    // post a comment
+    app.post('/wishlist', async(req, res) => {
+      const wishlist = req.body;
+      const wishlistResult = await wishListCollection.insertOne(wishlist);
+      res.send(wishlistResult);
+      console.log(wishlist);
+    })
+
+    // create a token
+    app.post('/jwt', async(req, res) => {
+      console.log('some one wants to make a token');
+      const user = req.body;
+      console.log('token create email:',user);
+      const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '1h'});
+      res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: false,
+        // sameSite: 'none',
+      })
+      .send({success: true})
+    })
+
+    // romove token after user logout
+    app.post('/logout', async(req, res) => {
+       console.log('logout called');
+       res.clearCookie('token',{maxAge: 0}).send({success: true})
+    })
 
     // get methods are
 
@@ -91,9 +157,14 @@ async function run() {
       res.send(getUpdateBlog);
     })
     // get my wishlist
-    app.get('/wishlist', async(req, res) => {
+    app.get('/wishlist', verifyToken, async(req, res) => {
+      const tokenUser = req.user.email;
+      console.log('mr token owner is:',tokenUser);
       const email = req.query?.email;
-      console.log(email);
+      if(tokenUser !== email){
+        return res.status(403).send({msg: 'Forbidden'});
+      }
+      console.log('request owner is: ',email);
       const myWishList = await wishListCollection.find({owner: email}).toArray();
       res.send(myWishList);
     })
@@ -114,27 +185,9 @@ async function run() {
 
 
 
-    // post methods
 
-    app.post('/addnewblog', async(req, res) => {
-      const newBlog = req.body;
-      const addResult = await allBlogsCollection.insertOne(newBlog);
-      res.send(addResult)
-    })
-    // post a comment
-    app.post('/comments', async(req, res) => {
-      const comment = req.body;
-      const commentResult = await commentsCollection.insertOne(comment);
-      res.send(commentResult);
-      console.log(comment);
-    })
-    // post a comment
-    app.post('/wishlist', async(req, res) => {
-      const wishlist = req.body;
-      const wishlistResult = await wishListCollection.insertOne(wishlist);
-      res.send(wishlistResult);
-      console.log(wishlist);
-    })
+
+
 
     
     // update a blog
