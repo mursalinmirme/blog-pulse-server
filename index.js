@@ -8,7 +8,7 @@ require('dotenv').config();
 
 // middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://blog-pulse.vercel.app/',
   credentials: true,
 }))
 app.use(express.json())
@@ -91,7 +91,8 @@ async function run() {
       res
       .cookie('token', token, {
         httpOnly: true,
-        secure: false,
+        // secure: false,
+        secure: true,
         // sameSite: 'none',
       })
       .send({success: true})
@@ -119,11 +120,11 @@ async function run() {
           filter = {category: filterBy}
         }
         console.log(filterBy);
-        const getFilterBlogs = await allBlogsCollection.find(filter).toArray();
+        const getFilterBlogs = await allBlogsCollection.find(filter).sort({blogPostTime: -1}).toArray();
         res.send(getFilterBlogs);
     })
     // get all blogs
-    app.get('/allblogs/:id', async(req, res) => {
+    app.get('/allblogs/:id', verifyToken, async(req, res) => {
         const currentItem = req?.params?.id;
         const findQuery = {_id: new ObjectId(currentItem)};
         const currentBlogResult = await allBlogsCollection.findOne(findQuery);
@@ -150,7 +151,7 @@ async function run() {
       console.log(comment);
     })
     // get update blog 
-    app.get('/update-blog', async(req, res) => {
+    app.get('/update-blog', verifyToken, async(req, res) => {
       const updateBlogId = req.query.blogid;
       console.log(updateBlogId);
       const getUpdateBlog = await allBlogsCollection.findOne({_id: new ObjectId(updateBlogId)});
