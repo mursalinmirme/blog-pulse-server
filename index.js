@@ -8,7 +8,7 @@ require('dotenv').config();
 
 // middleware
 app.use(cors({
-  origin: 'https://blog-pulse.vercel.app/',
+  origin: ['https://blog-pulse.vercel.app','https://blog-pulse.vercel.app/signin'],
   credentials: true,
 }))
 app.use(express.json())
@@ -61,6 +61,26 @@ async function run() {
     const wishListCollection = client.db('blog-pulse').collection('wishList');
 
     // post methods
+        // create a token
+        app.post('/jwt', async(req, res) => {
+          console.log('some one wants to make a token');
+          const user = req.body;
+          console.log('token create email:',user);
+          const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '1h'});
+          res
+          .cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+          })
+          .send({success: true})
+        })
+    
+        // romove token after user logout
+        app.post('/logout', async(req, res) => {
+           console.log('logout called');
+           res.clearCookie('token',{maxAge: 0}).send({success: true})
+        })
 
     app.post('/addnewblog', async(req, res) => {
       const newBlog = req.body;
@@ -82,27 +102,6 @@ async function run() {
       console.log(wishlist);
     })
 
-    // create a token
-    app.post('/jwt', async(req, res) => {
-      console.log('some one wants to make a token');
-      const user = req.body;
-      console.log('token create email:',user);
-      const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '1h'});
-      res
-      .cookie('token', token, {
-        httpOnly: true,
-        // secure: false,
-        secure: true,
-        // sameSite: 'none',
-      })
-      .send({success: true})
-    })
-
-    // romove token after user logout
-    app.post('/logout', async(req, res) => {
-       console.log('logout called');
-       res.clearCookie('token',{maxAge: 0}).send({success: true})
-    })
 
     // get methods are
 
