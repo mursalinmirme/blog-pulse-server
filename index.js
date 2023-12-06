@@ -7,6 +7,10 @@ const port = process.env.PORT || 5000;
 require('dotenv').config();
 
 // middleware
+// app.use(cors({
+//   origin: ['http://localhost:5173'],
+//   credentials: true,
+// }))
 app.use(cors({
   origin: ['https://blog-pulse.vercel.app','https://blog-pulse.vercel.app/signin'],
   credentials: true,
@@ -66,7 +70,7 @@ async function run() {
           console.log('some one wants to make a token');
           const user = req.body;
           console.log('token create email:',user);
-          const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '1h'});
+          const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '7d'});
           res
           .cookie('token', token, {
             httpOnly: true,
