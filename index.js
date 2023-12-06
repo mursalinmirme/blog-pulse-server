@@ -7,10 +7,12 @@ const port = process.env.PORT || 5000;
 require('dotenv').config();
 
 // middleware
+// for local development
 // app.use(cors({
-//   origin: ['http://localhost:5173'],
+//   origin: ['http://localhost:5173', 'http://localhost:5174'],
 //   credentials: true,
 // }))
+// for producton development
 app.use(cors({
   origin: ['https://blog-pulse.vercel.app','https://blog-pulse.vercel.app/signin'],
   credentials: true,
@@ -55,8 +57,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
 
     // collections
     const allBlogsCollection = client.db('blog-pulse').collection('allblogs');
@@ -65,26 +65,23 @@ async function run() {
     const wishListCollection = client.db('blog-pulse').collection('wishList');
 
     // post methods
-        // create a token
-        app.post('/jwt', async(req, res) => {
-          console.log('some one wants to make a token');
-          const user = req.body;
-          console.log('token create email:',user);
-          const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '7d'});
-          res
-          .cookie('token', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-          })
-          .send({success: true})
-        })
+    // create a token
+    app.post('/jwt', async(req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.SECRET_TOKEN, {expiresIn: '7d'});
+      res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+      })
+      .send({success: true})
+    })
     
-        // romove token after user logout
-        app.post('/logout', async(req, res) => {
-           console.log('logout called');
-           res.clearCookie('token',{maxAge: 0}).send({success: true})
-        })
+    // romove token after user logout
+    app.post('/logout', async(req, res) => {
+        res.clearCookie('token',{maxAge: 0}).send({success: true})
+    })
 
     app.post('/addnewblog', async(req, res) => {
       const newBlog = req.body;
@@ -96,17 +93,13 @@ async function run() {
       const comment = req.body;
       const commentResult = await commentsCollection.insertOne(comment);
       res.send(commentResult);
-      console.log(comment);
     })
     // post a comment
     app.post('/wishlist', async(req, res) => {
       const wishlist = req.body;
       const wishlistResult = await wishListCollection.insertOne(wishlist);
       res.send(wishlistResult);
-      console.log(wishlist);
     })
-
-
     // get methods are
 
     // get categories 
@@ -122,7 +115,6 @@ async function run() {
         if(filterBy !== 'All'){
           filter = {category: filterBy}
         }
-        console.log(filterBy);
         const getFilterBlogs = await allBlogsCollection.find(filter).sort({blogPostTime: -1}).toArray();
         res.send(getFilterBlogs);
     })
@@ -138,7 +130,6 @@ async function run() {
         const searchVal = req.query.search;
         const searchResult = await allBlogsCollection.find({blogTitle: searchVal}).toArray();
         res.send(searchResult);
-        console.log('search value is',searchVal);
     })
     // get recent posted blogs 
     app.get('/recentBlogs', async(req, res) => {
@@ -151,24 +142,20 @@ async function run() {
       const comment = req.query?.blog;
       const commentResult = await commentsCollection.find({blogId: comment}).toArray();
       res.send(commentResult);
-      console.log(comment);
     })
     // get update blog 
     app.get('/update-blog', verifyToken, async(req, res) => {
       const updateBlogId = req.query.blogid;
-      console.log(updateBlogId);
       const getUpdateBlog = await allBlogsCollection.findOne({_id: new ObjectId(updateBlogId)});
       res.send(getUpdateBlog);
     })
     // get my wishlist
     app.get('/wishlist', verifyToken, async(req, res) => {
       const tokenUser = req.user.email;
-      console.log('mr token owner is:',tokenUser);
       const email = req.query?.email;
       if(tokenUser !== email){
         return res.status(403).send({msg: 'Forbidden'});
       }
-      console.log('request owner is: ',email);
       const myWishList = await wishListCollection.find({owner: email}).toArray();
       res.send(myWishList);
     })
@@ -187,13 +174,6 @@ async function run() {
       res.send(getFeaturedBlogs);
     });
 
-
-
-
-
-
-
-    
     // update a blog
     app.put('/update-blog/:id', async(req, res) => {
       const updateData = req.body;
@@ -205,7 +185,6 @@ async function run() {
       }
       const updateResult = await allBlogsCollection.updateOne(filter, updateDoc, options);
       res.send(updateResult);
-      console.log('update data is ', updateData);
     })
 
     // delete a wishlist
@@ -213,12 +192,7 @@ async function run() {
       const deleteId = req.params.id;
       const deleteResult = await wishListCollection.deleteOne({_id: new ObjectId(deleteId)});
       res.send(deleteResult);
-      console.log(deleteResult);
     })
-
-
-
-
 
 
     // Send a ping to confirm a successful connection
