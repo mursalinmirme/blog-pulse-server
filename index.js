@@ -8,15 +8,15 @@ require('dotenv').config();
 
 // middleware
 // for local development
-// app.use(cors({
-//   origin: ['http://localhost:5173', 'http://localhost:5174'],
-//   credentials: true,
-// }))
-// for producton development
 app.use(cors({
-  origin: ['https://blog-pulse.vercel.app','https://blog-pulse.vercel.app/signin'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
 }))
+// for producton development
+// app.use(cors({
+//   origin: ['https://blog-pulse.vercel.app','https://blog-pulse.vercel.app/signin'],
+//   credentials: true,
+// }))
 app.use(express.json())
 app.use(cookieParser())
 
@@ -194,6 +194,26 @@ async function run() {
       res.send(deleteResult);
     })
 
+    // user total blogs get
+    app.get('/users-total-blogs', async(req, res) => {
+      const userEmail = req.query.email;
+      const result = await allBlogsCollection.find({bloggerEmail: userEmail}).toArray();
+      res.send(result)
+    })
+    // delete blog
+    app.delete('/delete-blog/:id', async(req, res) => {
+      const result = await allBlogsCollection.deleteOne({_id: new ObjectId(req.params.id)});
+      console.log(result);
+      res.send(result);
+    })
+    // total blogs under blogger
+    app.get('/total-blogs-under-writter', async(req, res) => {
+      const bloggerEmail = req.query.email;
+      const result = await allBlogsCollection.find({bloggerEmail: bloggerEmail}).toArray();
+      console.log('total doc num is', result);
+      console.log(bloggerEmail);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     client.db("admin").command({ ping: 1 });
